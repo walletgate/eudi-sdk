@@ -5,22 +5,26 @@
  * to ensure webhook payloads are authentic.
  */
 
-import { WalletGate } from '@walletgate/eudi';
-import crypto from 'crypto';
+import { WalletGate, WebhookPayload } from '@walletgate/eudi';
+import * as crypto from 'crypto';
 
-// Mock Node.js crypto for webhook verification
-// In a real Node.js environment, this would be the actual crypto module
 global.__WG_NODE_CRYPTO = crypto;
 
 const client = new WalletGate({
-  apiKey: process.env.WALLETGATE_API_KEY || 'your-api-key',
-  baseUrl: process.env.WALLETGATE_BASE_URL || 'https://api.walletgate.app'
+  apiKey: process.env.WALLETGATE_API_KEY || 'your-api-key'
 });
 
-/**
- * Verify a webhook payload
- */
-function verifyWebhook(req) {
+interface Request {
+  headers: Record<string, string>;
+  body: any;
+}
+
+interface Response {
+  status(code: number): Response;
+  json(data: any): Response;
+}
+
+function verifyWebhook(req: Request): boolean {
   const signature = req.headers['x-walletgate-signature'];
   const timestamp = req.headers['x-walletgate-timestamp'];
   const rawBody = JSON.stringify(req.body);
@@ -47,10 +51,7 @@ function verifyWebhook(req) {
   }
 }
 
-/**
- * Handle webhook payload
- */
-function handleWebhook(payload) {
+function handleWebhook(payload: WebhookPayload): void {
   console.log('Processing webhook event:', payload.event);
   console.log('Session ID:', payload.sessionId);
   console.log('Merchant ID:', payload.merchantId);
@@ -84,39 +85,28 @@ function handleWebhook(payload) {
   }
 }
 
-/**
- * Mock function to update user status
- */
-function updateUserStatus(sessionId, status) {
+function updateUserStatus(sessionId: string, status: string): void {
   console.log(`Updating user status for session ${sessionId} to: ${status}`);
-  // In a real app, you'd update your database here
 }
 
-/**
- * Express.js webhook endpoint example
- */
-function webhookEndpoint(req, res) {
-  // Verify the webhook signature
+function webhookEndpoint(req: Request, res: Response): Response | void {
   if (!verifyWebhook(req)) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
 
-  // Process the webhook
   try {
     handleWebhook(req.body);
-    res.status(200).json({ success: true });
-  } catch (error) {
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
     console.error('Error processing webhook:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// Example usage with Express.js
 if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('Webhook verification example');
 
-  // Mock webhook payload for testing
-  const mockPayload = {
+  const mockPayload: WebhookPayload = {
     event: 'verification.completed',
     sessionId: 'sess_123456789',
     merchantId: 'merchant_123',
@@ -130,8 +120,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     timestamp: new Date().toISOString()
   };
 
-  // Mock request object
-  const mockReq = {
+  const mockReq: Request = {
     headers: {
       'x-walletgate-signature': 'mock_signature',
       'x-walletgate-timestamp': Date.now().toString()

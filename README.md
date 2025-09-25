@@ -1,5 +1,6 @@
 # @walletgate/eudi
 
+[![CI](https://github.com/walletgate/eudi-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/walletgate/eudi-sdk/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/%40walletgate%2Feudi.svg)](https://badge.fury.io/js/%40walletgate%2Feudi)
 [![npm downloads](https://img.shields.io/npm/dm/@walletgate/eudi.svg)](https://www.npmjs.com/package/@walletgate/eudi)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -10,6 +11,17 @@
 
 WalletGate is a **Verifier/Relying Party** solution in the [EU Digital Identity Wallet ecosystem](https://eu-digital-identity-wallet.github.io/Build/). We enable businesses to accept and verify electronic attestations from EUDI Wallets using real EU government infrastructure.
 
+## 🌟 Open Source
+
+**WalletGate EUDI SDK is proudly open source** under Apache-2.0. We believe in transparent, community-driven identity verification infrastructure.
+
+- ✅ **Core SDK**: Always free and open source
+- 🏢 **Enterprise features**: Advanced analytics, SLA support, on-premise deployment
+- 🤝 **Community first**: Contributions welcome, roadmap driven by real needs
+- 🔒 **Trust through transparency**: Inspect our code, verify our claims
+
+[View source on GitHub](https://github.com/walletgate/eudi-sdk) • [Contribute](https://github.com/walletgate/eudi-sdk/blob/main/CONTRIBUTING.md) • [Enterprise features](https://walletgate.app/enterprise)
+
 ## Features
 
 - **🏛️ Real EU Infrastructure**: Direct connection to [EU LOTL](https://ec.europa.eu/tools/lotl/eu-lotl.xml) (List of Trusted Lists)
@@ -18,6 +30,8 @@ WalletGate is a **Verifier/Relying Party** solution in the [EU Digital Identity 
 - **🚀 Simple Integration**: 5 lines of code instead of 500+
 
 ## Installation
+
+### Node.js / JavaScript / TypeScript
 
 ```bash
 npm install @walletgate/eudi
@@ -28,6 +42,22 @@ Or try the CLI quick links (no install):
 ```bash
 npx @walletgate/eudi walletgate help
 # Prints: Get a free test API key + Docs links
+```
+
+### Other Languages
+
+For **Ruby, PHP, Java, Python, Go**, and other languages, use our HTTP API directly:
+
+- 📖 **[Complete HTTP API Guide](./docs/HTTP_API.md)** - Production-ready examples with error handling
+- 🔗 **Direct API calls** - No SDK installation required
+- ✅ **All languages supported** - Same functionality as JavaScript SDK
+
+**Quick Example (any language):**
+```bash
+curl -X POST https://api.walletgate.app/v1/verify/sessions \
+  -H "Authorization: Bearer your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"checks":[{"type":"age_over","value":18}]}'
 ```
 
 ## Quick Start

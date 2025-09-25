@@ -1,10 +1,7 @@
 /* eslint-disable no-console */
-/*
- * WalletGate CLI helper
- */
 
-const SIGNUP_URL = process.env.WALLETGATE_SIGNUP_URL || 'https://walletgate.app/signup';
-const DOCS_URL = process.env.WALLETGATE_DOCS_URL || 'https://walletgate.app/docs';
+const SIGNUP_URL = 'https://walletgate.app/signup';
+const DOCS_URL = 'https://walletgate.app/docs';
 
 function main(): void {
   const args = process.argv.slice(2);

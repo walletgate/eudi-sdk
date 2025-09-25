@@ -29,12 +29,12 @@ export interface WalletGateConfig {
   baseUrl?: string;
   timeout?: number;
   retries?: {
-    maxRetries?: number; // default 0 (no retries)
-    baseDelayMs?: number; // default 200
-    factor?: number; // default 2
-    jitter?: boolean; // default true
+    maxRetries?: number;
+    baseDelayMs?: number;
+    factor?: number;
+    jitter?: boolean;
   };
-  onRateLimit?: (info: RateLimitInfo) => void; // optional callback on 429
+  onRateLimit?: (info: RateLimitInfo) => void;
 }
 
 export class WalletGate {
@@ -46,7 +46,7 @@ export class WalletGate {
 
   constructor(config: WalletGateConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || 'http://localhost:4000';
+    this.baseUrl = config.baseUrl || 'https://api.walletgate.app';
     this.timeout = config.timeout || 30000;
     const r = config.retries || {};
     this.retries = {
@@ -79,10 +79,8 @@ export class WalletGate {
     secret: string,
     timestamp: string
   ): boolean {
-    // Node-only implementation. Do not use in browsers.
     const isNode = typeof process !== 'undefined' && !!(process as unknown as { versions?: { node?: string } }).versions?.node;
     if (!isNode) throw new Error('verifyWebhook is only supported in Node environments');
-    // Use injected Node crypto if provided by the environment (e.g., tests)
     const injected = (globalThis as unknown as { __WG_NODE_CRYPTO?: NodeCryptoLike }).__WG_NODE_CRYPTO;
     if (!injected) {
       throw new Error('Node crypto module not available');
@@ -117,7 +115,6 @@ export class WalletGate {
           });
 
           if (!response.ok) {
-            // Do not retry on 4xx
             if (response.status >= 400 && response.status < 500) {
               const err = (await safeJson(response)) as (RateLimitInfo & { code?: string }) | null;
               if (err && err.code === 'RATE_LIMIT_EXCEEDED') {
@@ -139,18 +136,14 @@ export class WalletGate {
               }
               throw new NoRetryError((err && err.message) || `Request failed with status ${response.status}`);
             }
-            // For 5xx, throw to enter retry loop
             const err5 = (await safeJson(response)) as { message?: string } | null;
             throw new Error((err5 && err5.message) || `Server error (${response.status})`);
           }
-          // Success
           const data = (await safeJson(response)) as T;
           return data;
         } catch (e) {
           if (e instanceof NoRetryError) throw e;
-          // Abort or exceeded retries
           if (controller.signal.aborted || attempt >= this.retries.maxRetries) throw e;
-          // Backoff
           await delay(this.retries.baseDelayMs * Math.pow(this.retries.factor, attempt), this.retries.jitter);
           attempt++;
           continue;

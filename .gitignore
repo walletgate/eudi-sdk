@@ -49,5 +49,5 @@ temp/
 .tmp/
 
 # Package manager locks
-package-lock.json
+# package-lock.json should be committed for npm projects
 yarn.lock

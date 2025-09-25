@@ -1,0 +1,44 @@
+# Development and test files
+__tests__/
+coverage/
+*.test.ts
+*.spec.ts
+vitest.config.ts
+.eslintrc.js
+.prettierrc
+
+# Documentation source (built docs can be included)
+docs/
+
+# Environment and config files
+.env
+.env.example
+.env.local
+.env.*.local
+
+# CI/CD
+.github/
+
+# Source maps (optional, include if you want debugging support)
+# *.map
+
+# TypeScript config (keep tsconfig.json for type definitions)
+# tsconfig.json
+
+# Development examples (keep if you want users to see examples)
+# examples/
+
+# Editor directories
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build tools config that aren't needed for consumers
+.gitignore

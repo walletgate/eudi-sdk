@@ -18,8 +18,6 @@ export function buildDeepLinkUrl(walletRequestUrl: string): string {
   if (typeof walletRequestUrl !== 'string' || walletRequestUrl.length === 0) {
     throw new Error('walletRequestUrl is required');
   }
-  // Basic validation: must be http(s) or known custom scheme
-  // Accept standard http(s) URLs or any RFC3986 scheme (e.g., openid4vp)
   if (!/^https?:\/\//i.test(walletRequestUrl) && !/^[a-z][a-z0-9+.-]*:/i.test(walletRequestUrl)) {
     throw new Error('Invalid walletRequestUrl');
   }
@@ -28,12 +26,10 @@ export function buildDeepLinkUrl(walletRequestUrl: string): string {
 
 export async function makeQrDataUrl(url: string): Promise<string> {
   if (typeof url !== 'string' || url.length === 0) throw new Error('URL required');
-  // 1) Check injected global (allows custom generator in tests and hosts)
   const injected = (globalThis as { __WG_QR?: { toDataURL?: (url: string, opts: { margin: number; scale: number }) => Promise<string> } }).__WG_QR;
   if (injected && typeof injected.toDataURL === 'function') {
     return await injected.toDataURL(url, { margin: 1, scale: 4 });
   }
-  // 2) Use optional peer dependency qrcode if available
   try {
     const mod = await import('qrcode') as { toDataURL?: (url: string, opts: { margin: number; scale: number }) => Promise<string> };
     if (!mod || typeof mod.toDataURL !== 'function') throw new Error('qrcode.toDataURL not available');
