@@ -32,7 +32,7 @@ npx @walletgate/eudi walletgate help
 
 ## Quick Start
 
-Before you begin: Get a free, rate‑limited test API key at https://walletgate.app/signup (Starter: 60 req/min per key, 1,000 verifications/month in test). Upgrade anytime for higher limits and live access.
+Before you begin: Get a free, rate‑limited test API key at https://walletgate.app/signup (Free: 100 verifications/month). Upgrade anytime for higher limits and live access.
 
 ### 1. Initialize
 
@@ -119,7 +119,7 @@ app.post('/webhooks/walletgate', (req, res) => {
 
 ## Handling Rate Limits
 
-Starter keys are rate‑limited (60 req/min per key) with a monthly quota. The SDK surfaces 429 details and lets you hook a callback:
+Free tier keys are rate‑limited with a monthly quota. The SDK surfaces 429 details and lets you hook a callback:
 
 ```ts
 const eudi = new WalletGate({
