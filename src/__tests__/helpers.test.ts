@@ -10,7 +10,7 @@ describe('SDK helpers', () => {
 
   it('makeQrDataUrl uses optional qrcode dependency', async () => {
     const toDataURL = vi.fn().mockResolvedValue('data:image/png;base64,XXXX');
-    ;(globalThis as any).__WG_QR = { toDataURL };
+    (globalThis as any).__WG_QR = { toDataURL };
     const data = await makeQrDataUrl('https://example.com');
     expect(data.startsWith('data:image')).toBe(true);
   });
