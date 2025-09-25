@@ -1,0 +1,91 @@
+{
+  "name": "@walletgate/eudi",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "EUDI Wallet SDK for JavaScript/TypeScript - EU Digital Identity verification made simple",
+  "main": "dist/node/index.js",
+  "module": "dist/browser/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "walletgate": "dist/node/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npm run clean && npm run build:node && npm run build:cli && npm run build:browser && npm run build:types",
+    "build:node": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/node/index.js",
+    "build:cli": "esbuild src/cli.ts --bundle --platform=node --target=node18 --outfile=dist/node/cli.js --banner:js=\"#!/usr/bin/env node\"",
+    "build:browser": "esbuild src/index.ts --bundle --platform=browser --target=es2020 --outfile=dist/browser/index.js",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap",
+    "clean": "rm -rf dist",
+    "test": "vitest run --reporter=basic 2>/dev/null || vitest run --reporter=basic",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
+    "typecheck": "tsc --noEmit",
+    "docs": "typedoc src/index.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/node/index.js",
+      "browser": "./dist/browser/index.js",
+      "default": "./dist/node/index.js"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.6.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vitest/coverage-v8": "^1.2.0",
+    "esbuild": "^0.19.11",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.4",
+    "typedoc": "^0.25.7",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.5.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "eudi",
+    "eudi-wallet",
+    "eu-digital-identity",
+    "european-digital-identity",
+    "digital-wallet",
+    "age-verification",
+    "identity-verification",
+    "walletgate",
+    "mdoc",
+    "iso-18013-5",
+    "verifiable-credentials",
+    "sdk"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletgate/eudi-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletgate/eudi-sdk/issues"
+  },
+  "homepage": "https://walletgate.app",
+  "publishConfig": {
+    "access": "public"
+  }
+}
