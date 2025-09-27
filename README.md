@@ -64,8 +64,8 @@ curl -X POST https://api.walletgate.app/v1/verify/sessions \
 
 **Before you begin**: WalletGate supports two environments for development and production:
 
-- **🧪 Test Environment**: Get a free test API key (`wg_test_*`) at https://walletgate.app/signup - unlimited usage, uses mock TSL for safe development
-- **🚀 Live Environment**: Upgrade to a paid plan for live API keys (`wg_live_*`) - real EU LOTL verification with usage quotas
+- **🧪 Test Environment**: Get a free test API key (`wg_test_*`) at https://walletgate.app/signup — mock TSL for safe development with a 100 verifications/month cap per merchant
+- **🚀 Live Environment**: Upgrade to a paid plan for live API keys (`wg_live_*`) — real EU LOTL verification with plan-based usage quotas
 
 ### 1. Initialize
 
@@ -320,11 +320,11 @@ interface VerificationResult {
 
 WalletGate provides a comprehensive test environment for safe development:
 
-1. **Get test API key**: https://walletgate.app/signup (free, unlimited usage)
+1. **Get test API key**: https://walletgate.app/signup (free, 100 verifications/month cap per merchant)
 2. **Use test wallet**: https://test-wallet.walletgate.app
 3. **Mock TSL verification**: Uses fake certificates for safe testing
 4. **Test personas**: Adult/minor, EU/non-EU resident options
-5. **No usage tracking**: Test requests don't count towards quotas
+5. **Usage**: Test requests don't count towards live plan quotas, but are subject to the 100/month test cap
 
 ```typescript
 // Test environment automatically detected from API key prefix
@@ -352,9 +352,18 @@ console.log(session.warning);     // "THIS IS A TEST VERIFICATION..."
 
 ### Security
 - Certificate chain validation to EU roots
-- Real-time OCSP/CRL revocation checking
+- OCSP/CRL revocation checking (planned; disabled in MVP)
 - HMAC-SHA256 webhook signatures
 - Complete audit trails
+
+## Plans & Limits
+
+- **Trial (Test)**: 100 verifications/month (per merchant)
+- **Starter (Live)**: 1,000 verifications/month
+- **Growth (Live)**: 10,000 verifications/month
+- **Scale (Live)**: 50,000 verifications/month
+
+Daily rolling 24h caps are configurable by environment variables on the server (disabled by default).
 
 ## Links
 
