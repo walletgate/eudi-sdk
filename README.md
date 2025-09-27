@@ -1,8 +1,7 @@
 # @walletgate/eudi
 
 [![CI](https://github.com/walletgate/eudi-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/walletgate/eudi-sdk/actions/workflows/ci.yml)
-[![npm version](https://badge.fury.io/js/%40walletgate%2Feudi.svg)](https://badge.fury.io/js/%40walletgate%2Feudi)
-[![npm downloads](https://img.shields.io/npm/dm/@walletgate/eudi.svg)](https://www.npmjs.com/package/@walletgate/eudi)
+[![npm version](https://img.shields.io/npm/v/@walletgate/eudi.svg)](https://www.npmjs.com/package/@walletgate/eudi)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![EUDI Compliant](https://img.shields.io/badge/EUDI-Compliant-green.svg)](https://eu-digital-identity-wallet.github.io/Build/)
@@ -20,7 +19,7 @@ WalletGate is a **Verifier/Relying Party** solution in the [EU Digital Identity 
 - 🤝 **Community first**: Contributions welcome, roadmap driven by real needs
 - 🔒 **Trust through transparency**: Inspect our code, verify our claims
 
-[View source on GitHub](https://github.com/walletgate/eudi-sdk) • [Contribute](https://github.com/walletgate/eudi-sdk/blob/main/CONTRIBUTING.md) • [Enterprise features](https://walletgate.app/enterprise)
+[View source on GitHub](https://github.com/walletgate/eudi-sdk) • [Contribute](https://github.com/walletgate/eudi-sdk/blob/main/CONTRIBUTING.md) • [Get early access](https://walletgate.app)
 
 ## Features
 
@@ -62,7 +61,10 @@ curl -X POST https://api.walletgate.app/v1/verify/sessions \
 
 ## Quick Start
 
-Before you begin: Get a free, rate‑limited test API key at https://walletgate.app/signup (Free: 100 verifications/month). Upgrade anytime for higher limits and live access.
+**Before you begin**: WalletGate supports two environments for development and production:
+
+- **🧪 Test Environment**: Get a free test API key (`wg_test_*`) at https://walletgate.app — mock TSL for safe development with a 100 verifications/month cap per merchant
+- **🚀 Live Environment**: Upgrade to a paid plan for live API keys (`wg_live_*`) — real EU LOTL verification with plan-based usage quotas
 
 ### 1. Initialize
 
@@ -70,7 +72,7 @@ Before you begin: Get a free, rate‑limited test API key at https://walletgate.
 import { WalletGate } from '@walletgate/eudi';
 
 const eudi = new WalletGate({
-  apiKey: process.env.WALLETGATE_API_KEY, // Get from https://walletgate.app/signup
+  apiKey: process.env.WALLETGATE_API_KEY, // wg_test_* or wg_live_*
   baseUrl: 'https://api.walletgate.app'
 });
 ```
@@ -87,11 +89,11 @@ const session = await eudi.startVerification({
 });
 
 // Redirect user to wallet
-window.location.href = session.walletRequestUrl;
+window.location.href = session.verificationUrl;
 
-// Or show QR code for cross-device
+// Or show QR code for cross-device (generate locally; no external services)
 import { makeQrDataUrl } from '@walletgate/eudi';
-const qrCode = await makeQrDataUrl(session.walletRequestUrl);
+const qrCode = await makeQrDataUrl(session.verificationUrl);
 ```
 
 ### 3. Get Results
@@ -147,9 +149,39 @@ app.post('/webhooks/walletgate', (req, res) => {
 });
 ```
 
+## Environment Handling
+
+WalletGate automatically detects your environment based on your API key:
+
+```typescript
+const session = await eudi.startVerification({
+  checks: [{ type: 'age_over', value: 18 }]
+});
+
+// Check environment from response
+if (session.environment === 'test') {
+  console.log('⚠️ Test mode:', session.warning);
+  // "THIS IS A TEST VERIFICATION - NOT A REAL CREDENTIAL CHECK"
+} else {
+  console.log('✅ Live environment - real verification');
+}
+```
+
+### Test Environment
+- **API Keys**: `wg_test_*`
+- **Purpose**: Development and testing
+- **Features**: Mock TSL, no usage limits, test warnings
+- **Cost**: Free for all users
+
+### Live Environment
+- **API Keys**: `wg_live_*`
+- **Purpose**: Production verification
+- **Features**: Real EU LOTL, usage quotas, SLAs
+- **Cost**: Paid plans only
+
 ## Handling Rate Limits
 
-Free tier keys are rate‑limited with a monthly quota. The SDK surfaces 429 details and lets you hook a callback:
+Live environment keys have usage quotas. The SDK surfaces 429 details and lets you hook a callback:
 
 ```ts
 const eudi = new WalletGate({
@@ -166,6 +198,8 @@ try {
   // err.message includes retryAfterSeconds and upgradeUrl when available
 }
 ```
+
+**Note**: Test environment API keys have no rate limits or quotas.
 
 ## Framework Examples
 
@@ -188,8 +222,8 @@ export default async function handler(req, res) {
 export function AgeGate() {
   const verifyAge = async () => {
     const res = await fetch('/api/verify', { method: 'POST' });
-    const { walletRequestUrl } = await res.json();
-    window.location.href = walletRequestUrl;
+    const { verificationUrl } = await res.json();
+    window.location.href = verificationUrl;
   };
 
   return <button onClick={verifyAge}>Verify Age with EUDI Wallet</button>;
@@ -213,7 +247,7 @@ app.post('/verify/start', async (req, res) => {
 
   res.json({
     sessionId: session.id,
-    walletUrl: session.walletRequestUrl
+    walletUrl: session.verificationUrl
   });
 });
 
@@ -261,14 +295,20 @@ interface CheckType {
 
 interface VerificationSession {
   id: string;
-  walletRequestUrl: string;
+  verificationUrl: string;
   status: 'pending';
+  environment: 'test' | 'live';
+  testMode?: boolean;
+  warning?: string;
   createdAt: string;
 }
 
 interface VerificationResult {
   id: string;
   status: 'pending' | 'verified' | 'failed' | 'expired';
+  environment: 'test' | 'live';
+  testMode?: boolean;
+  warning?: string;
   checks: Record<string, boolean>;
   reason?: string;
   completedAt?: string;
@@ -277,11 +317,28 @@ interface VerificationResult {
 
 ## Testing
 
-Use our test environment with real EU infrastructure:
+WalletGate provides a comprehensive test environment for safe development:
 
-1. Get test API key: https://walletgate.app/signup
-2. Use test wallet: https://test-wallet.walletgate.app
-3. Select test personas (adult/minor, EU/non-EU resident)
+1. **Get test API key**: https://walletgate.app (free, 100 verifications/month cap per merchant)
+2. **Use test wallet**: Coming soon
+3. **Mock TSL verification**: Uses fake certificates for safe testing
+4. **Test personas**: Adult/minor, EU/non-EU resident options
+5. **Usage**: Test requests don't count towards live plan quotas, but are subject to the 100/month test cap
+
+```typescript
+// Test environment automatically detected from API key prefix
+const testEudi = new WalletGate({
+  apiKey: 'wg_test_your_key_here' // Auto-detected as test environment
+});
+
+const session = await testEudi.startVerification({
+  checks: [{ type: 'age_over', value: 18 }]
+});
+
+console.log(session.environment); // "test"
+console.log(session.testMode);    // true
+console.log(session.warning);     // "THIS IS A TEST VERIFICATION..."
+```
 
 ## Technical Details
 
@@ -294,16 +351,23 @@ Use our test environment with real EU infrastructure:
 
 ### Security
 - Certificate chain validation to EU roots
-- Real-time OCSP/CRL revocation checking
+- OCSP/CRL revocation checking (planned; disabled in MVP)
 - HMAC-SHA256 webhook signatures
 - Complete audit trails
 
+## Plans & Limits
+
+- **Trial (Test)**: 100 verifications/month (per merchant)
+- **Starter (Live)**: 1,000 verifications/month
+- **Growth (Live)**: 10,000 verifications/month
+- **Scale (Live)**: 50,000 verifications/month
+
+Daily rolling 24h caps are configurable by environment variables on the server (disabled by default).
+
 ## Links
 
+- **Get early access**: https://walletgate.app
 - **Documentation**: https://walletgate.app/docs
-- **Dashboard**: https://app.walletgate.app
-- **GitHub**: https://github.com/walletgate/eudi-sdk
-- **Support**: support@walletgate.app
 
 ## License
 

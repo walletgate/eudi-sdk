@@ -11,9 +11,11 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
+    "prepublishOnly": "npm run build && npm run typecheck && npm run lint",
     "build": "npm run clean && npm run build:node && npm run build:cli && npm run build:browser && npm run build:types",
     "build:node": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/node/index.js",
     "build:cli": "esbuild src/cli.ts --bundle --platform=node --target=node18 --outfile=dist/node/cli.js --banner:js=\"#!/usr/bin/env node\"",
@@ -86,6 +88,7 @@
   },
   "homepage": "https://walletgate.app",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "tag": "next"
   }
 }

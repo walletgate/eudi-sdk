@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 WalletGate
+ */
+
 import { describe, it, expect } from 'vitest';
 import { makeQrDataUrl, buildDeepLinkUrl } from '../helpers';
 

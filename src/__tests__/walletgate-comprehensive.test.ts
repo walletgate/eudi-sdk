@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 WalletGate
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WalletGate } from '../index';
 

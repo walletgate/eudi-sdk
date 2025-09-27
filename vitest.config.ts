@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 WalletGate
+ */
+
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import path from 'path';

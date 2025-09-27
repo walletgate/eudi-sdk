@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 WalletGate
+ */
+
 /* eslint-disable no-console */
 
 const SIGNUP_URL = 'https://walletgate.app/signup';

@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 WalletGate
+ */
+
 export interface VerificationCheck {
   type: 'age_over' | 'residency_in' | 'name_match';
   value?: number | string | string[];
