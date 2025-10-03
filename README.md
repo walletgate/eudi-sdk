@@ -47,7 +47,7 @@ npx @walletgate/eudi walletgate help
 
 For **Ruby, PHP, Java, Python, Go**, and other languages, use our HTTP API directly:
 
-- 📖 **[Complete HTTP API Guide](./docs/HTTP_API.md)** - Production-ready examples with error handling
+- 📖 **[Complete HTTP API Guide](https://docs.walletgate.app/api/overview)** - Production-ready examples with error handling
 - 🔗 **Direct API calls** - No SDK installation required
 - ✅ **All languages supported** - Same functionality as JavaScript SDK
 
