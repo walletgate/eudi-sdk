@@ -14,10 +14,10 @@ WalletGate is a **Verifier/Relying Party** solution in the [EU Digital Identity 
 
 **WalletGate EUDI SDK is proudly open source** under Apache-2.0. We believe in transparent, community-driven identity verification infrastructure.
 
-- ✅ **Core SDK**: Always free and open source
-- 🏢 **Enterprise features**: Advanced analytics, SLA support, on-premise deployment
-- 🤝 **Community first**: Contributions welcome, roadmap driven by real needs
-- 🔒 **Trust through transparency**: Inspect our code, verify our claims
+- ✅ **Core SDK** - Always free and open source
+- 🏢 **Enterprise features** - Advanced analytics, SLA support, on-premise deployment
+- 🤝 **Community first** - Contributions welcome, roadmap driven by real needs
+- 🔒 **Trust through transparency** - Inspect our code, verify our claims
 
 [View source on GitHub](https://github.com/walletgate/eudi-sdk) • [Contribute](https://github.com/walletgate/eudi-sdk/blob/main/CONTRIBUTING.md) • [Get early access](https://walletgate.app)
 
