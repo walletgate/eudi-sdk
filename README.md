@@ -368,6 +368,8 @@ Daily rolling 24h caps are configurable by environment variables on the server (
 
 - **Get early access**: https://walletgate.app
 - **Documentation**: https://walletgate.app/docs
+- **Support**: support@walletgate.app
+- **Security**: security@walletgate.app
 
 ## License
 
