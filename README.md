@@ -357,12 +357,12 @@ console.log(session.warning);     // "THIS IS A TEST VERIFICATION..."
 
 ## Plans & Limits
 
-- **Trial (Test)**: 100 verifications/month (per merchant)
-- **Starter (Live)**: 1,000 verifications/month
-- **Growth (Live)**: 10,000 verifications/month
-- **Scale (Live)**: 50,000 verifications/month
+- **Trial (Test)**: Unlimited test verifications + 0 live verifications/month
+- **Starter (€29/mo)**: Unlimited test + 150 live verifications/month
+- **Growth (€79/mo)**: Unlimited test + 500 live verifications/month
+- **Scale (€149/mo)**: Unlimited test + 2,000 live verifications/month
 
-Daily rolling 24h caps are configurable by environment variables on the server (disabled by default).
+All plans include unlimited test environment verifications. Live verifications count against your monthly quota.
 
 ## Links
 

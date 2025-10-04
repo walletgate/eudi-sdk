@@ -1,9 +1,13 @@
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'import'],
   extends: [
-    'eslint:recommended'
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'prettier'
   ],
   env: {
     node: true,
@@ -27,7 +31,11 @@ module.exports = {
   rules: {
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    'no-explicit-any': 'off'
+    '@typescript-eslint/no-explicit-any': 'off', // Allow 'any' types - focus on critical errors
+    '@typescript-eslint/consistent-type-imports': 'warn',
+    'import/order': 'warn', // Downgrade to warning instead of error
+    'import/no-duplicates': 'warn',
+    'import/no-unresolved': 'off' // Disable unresolved imports (handled by TypeScript)
   },
   ignorePatterns: [
     'dist/',

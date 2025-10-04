@@ -848,14 +848,15 @@ function verifyWebhook($payload, $signature, $secret, $timestamp) {
 
 ## Rate Limits
 
-### Free Tier
-- **100 verifications/month**
+### Trial Plan (Free)
+- **Unlimited test verifications** + 0 live verifications/month
 - **No rate limits** (reasonable use)
 
 ### Paid Tiers
-- **Starter:** 10,000 verifications/month
-- **Growth:** 50,000 verifications/month
-- **Enterprise:** Unlimited
+- **Starter (€29/month):** Unlimited test + 150 live verifications/month
+- **Growth (€79/month):** Unlimited test + 500 live verifications/month
+- **Scale (€149/month):** Unlimited test + 2,000 live verifications/month
+- **Enterprise:** Custom pricing, unlimited
 
 ### Rate Limit Headers
 
