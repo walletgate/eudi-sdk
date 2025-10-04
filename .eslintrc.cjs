@@ -1,9 +1,13 @@
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'import'],
   extends: [
-    'eslint:recommended'
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'prettier'
   ],
   env: {
     node: true,
@@ -27,7 +31,17 @@ module.exports = {
   rules: {
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    'no-explicit-any': 'off'
+    'no-explicit-any': 'off',
+    '@typescript-eslint/consistent-type-imports': 'warn',
+    'import/order': [
+      'warn',
+      {
+        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+        'newlines-between': 'always',
+        alphabetize: { order: 'asc', caseInsensitive: true }
+      }
+    ],
+    'import/no-duplicates': 'warn'
   },
   ignorePatterns: [
     'dist/',

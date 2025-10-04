@@ -26,8 +26,10 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
+    "format:imports": "eslint src --ext .ts --fix --rule 'import/order: [\"warn\", {\"alphabetize\": {\"order\": \"asc\", \"caseInsensitive\": true}}]'",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
+    "prepare": "husky install",
     "typecheck": "tsc --noEmit",
     "docs": "typedoc src/index.ts"
   },
@@ -51,6 +53,9 @@
     "esbuild": "^0.19.11",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
     "prettier": "^3.2.4",
     "typedoc": "^0.25.7",
     "typescript": "^5.3.3",
@@ -90,5 +95,11 @@
   "publishConfig": {
     "access": "public",
     "tag": "next"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
