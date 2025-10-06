@@ -369,6 +369,7 @@ All plans include unlimited test environment verifications. Live verifications c
 - **Get early access**: https://walletgate.app
 - **Documentation**: https://walletgate.app/docs
 - **Support**: support@walletgate.app
+- **Discord community**(https://discord.gg/Sf8P2Vpv)
 - **Security**: security@walletgate.app
 
 ## License
