@@ -357,10 +357,10 @@ console.log(session.warning);     // "THIS IS A TEST VERIFICATION..."
 
 ## Plans & Limits
 
-- **Trial (Test)**: Unlimited test verifications + 0 live verifications/month
-- **Starter (€29/mo)**: Unlimited test + 150 live verifications/month
-- **Growth (€79/mo)**: Unlimited test + 500 live verifications/month
-- **Scale (€149/mo)**: Unlimited test + 2,000 live verifications/month
+- **Trial**: Unlimited test verifications + 0 live verifications/month
+- **Starter**: Unlimited test + 150 live verifications/month
+- **Growth**: Unlimited test + 500 live verifications/month
+- **Scale**: Unlimited test + 2,000 live verifications/month
 
 All plans include unlimited test environment verifications. Live verifications count against your monthly quota.
 
