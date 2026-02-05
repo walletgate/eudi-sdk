@@ -4,7 +4,7 @@
 
 /* eslint-disable no-console */
 
-const SIGNUP_URL = 'https://walletgate.app/signup';
+const SIGNUP_URL = 'https://walletgate.app/';
 const DOCS_URL = 'https://walletgate.app/docs';
 
 function main(): void {

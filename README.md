@@ -6,80 +6,55 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![EUDI Compliant](https://img.shields.io/badge/EUDI-Compliant-green.svg)](https://eu-digital-identity-wallet.github.io/Build/)
 
-> **EU Digital Identity Wallet verification made simple**
+> EU Digital Identity Wallet verification made simple.
 
-WalletGate is a **Verifier/Relying Party** solution in the [EU Digital Identity Wallet ecosystem](https://eu-digital-identity-wallet.github.io/Build/). We enable businesses to accept and verify electronic attestations from EUDI Wallets using real EU government infrastructure.
-
-## 🌟 Open Source
-
-**WalletGate EUDI SDK is proudly open source** under Apache-2.0. We believe in transparent, community-driven identity verification infrastructure.
-
-- ✅ **Core SDK** - Always free and open source
-- 🏢 **Enterprise features** - Advanced analytics, SLA support, on-premise deployment
-- 🤝 **Community first** - Contributions welcome, roadmap driven by real needs
-- 🔒 **Trust through transparency** - Inspect our code, verify our claims
-
-[View source on GitHub](https://github.com/walletgate/eudi-sdk) • [Contribute](https://github.com/walletgate/eudi-sdk/blob/main/CONTRIBUTING.md) • [Get early access](https://walletgate.app)
-
-## Features
-
-- **🏛️ Real EU Infrastructure**: Direct connection to [EU LOTL](https://ec.europa.eu/tools/lotl/eu-lotl.xml) (List of Trusted Lists)
-- **📋 Standards Compliant**: OpenID4VP, ISO 18013-5, SD-JWT VC, mDoc
-- **🔐 Production Ready**: Government trust chains, not test certificates
-- **🚀 Simple Integration**: 5 lines of code instead of 500+
+WalletGate is a Verifier/Relying Party SDK for the EU Digital Identity Wallet ecosystem. It lets you create verification sessions, direct users to their wallet, and fetch signed results using real EU trust infrastructure.
 
 ## Installation
 
-### Node.js / JavaScript / TypeScript
+::: code-group
 
-```bash
+```bash [npm]
 npm install @walletgate/eudi
 ```
 
-Or try the CLI quick links (no install):
+```bash [pnpm]
+pnpm add @walletgate/eudi
+```
+
+```bash [yarn]
+yarn add @walletgate/eudi
+```
+
+:::
+
+Optional CLI (no install):
 
 ```bash
 npx @walletgate/eudi walletgate help
 # Prints: Get a free test API key + Docs links
 ```
 
-### Other Languages
-
-For **Ruby, PHP, Java, Python, Go**, and other languages, use our HTTP API directly:
-
-- 📖 **[Complete HTTP API Guide](https://docs.walletgate.app)** - Production-ready examples with error handling
-- 🔗 **Direct API calls** - No SDK installation required
-- ✅ **All languages supported** - Same functionality as JavaScript SDK
-
-**Quick Example (any language):**
-```bash
-curl -X POST https://api.walletgate.app/v1/verify/sessions \
-  -H "Authorization: Bearer your_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{"checks":[{"type":"age_over","value":18}]}'
-```
-
 ## Quick Start
 
-**Before you begin**: WalletGate supports two environments for development and production:
-
-- **🧪 Test Environment**: Get a free test API key (`wg_test_*`) at https://walletgate.app — mock TSL for safe development with a 100 verifications/month cap per merchant
-- **🚀 Live Environment**: Upgrade to a paid plan for live API keys (`wg_live_*`) — real EU LOTL verification with plan-based usage quotas
+WalletGate supports two environments:
+- Test keys: `wg_test_*`
+- Live keys: `wg_live_*`
 
 ### 1. Initialize
 
-```typescript
+```ts
 import { WalletGate } from '@walletgate/eudi';
 
 const eudi = new WalletGate({
-  apiKey: process.env.WALLETGATE_API_KEY, // wg_test_* or wg_live_*
+  apiKey: process.env.WALLETGATE_API_KEY,
   baseUrl: 'https://api.walletgate.app'
 });
 ```
 
 ### 2. Start Verification
 
-```typescript
+```ts
 const session = await eudi.startVerification({
   checks: [
     { type: 'age_over', value: 18 },
@@ -90,40 +65,41 @@ const session = await eudi.startVerification({
 
 // Redirect user to wallet
 window.location.href = session.verificationUrl;
-
-// Or show QR code for cross-device (generate locally; no external services)
-import { makeQrDataUrl } from '@walletgate/eudi';
-const qrCode = await makeQrDataUrl(session.verificationUrl);
 ```
 
 ### 3. Get Results
 
-```typescript
-const result = await eudi.getResult(sessionId);
+```ts
+const result = await eudi.getResult(session.id);
 
 if (result.status === 'completed') {
-  // User successfully verified
   console.log('Age over 18:', result.results?.age_over_18);
   console.log('EU resident:', result.results?.residency_eu);
 }
 ```
 
-## Verification Types
+## QR Code Helper (Optional)
 
-| Type | Description | Example |
-|------|-------------|---------|
-| `age_over` | Verify minimum age | `{ type: 'age_over', value: 18 }` |
-| `residency_eu` | Verify EU residency | `{ type: 'residency_eu' }` |
-| `identity_verified` | Verify identity (KYC) | `{ type: 'identity_verified' }` |
+If you want to show a QR code for cross-device flows, install the optional `qrcode` dependency:
 
-## Webhooks
+```bash
+npm install qrcode
+```
 
-```typescript
+Then generate a data URL locally (no external services):
+
+```ts
+import { makeQrDataUrl } from '@walletgate/eudi';
+const qrCode = await makeQrDataUrl(session.verificationUrl);
+```
+
+## Webhook Verification (Node)
+
+```ts
 app.post('/webhooks/walletgate', (req, res) => {
   const signature = req.headers['wg-signature'];
   const timestamp = req.headers['wg-timestamp'];
 
-  // Verify webhook authenticity
   const isValid = eudi.verifyWebhook(
     req.rawBody,
     signature,
@@ -132,250 +108,55 @@ app.post('/webhooks/walletgate', (req, res) => {
   );
 
   if (!isValid) return res.status(400).send('Invalid signature');
-
-  const event = JSON.parse(req.rawBody);
-
-  switch(event.type) {
-    case 'verification.completed':
-      // Handle successful verification
-      break;
-    case 'verification.failed':
-      // Handle failed verification
-      break;
-  }
-
   res.sendStatus(200);
 });
 ```
 
-## Environment Handling
+## REST API (Other Languages)
 
-WalletGate automatically detects your environment based on your API key:
+Use the REST API directly in any language:
 
-```typescript
-const session = await eudi.startVerification({
-  checks: [{ type: 'age_over', value: 18 }]
-});
+::: code-group
 
-// Check environment from response
-if (session.environment === 'test') {
-  console.log('⚠️ Test mode:', session.warning);
-  // "THIS IS A TEST VERIFICATION - NOT A REAL CREDENTIAL CHECK"
-} else {
-  console.log('✅ Live environment - real verification');
-}
+```bash [cURL]
+curl -X POST https://api.walletgate.app/v1/verify/sessions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"checks":[{"type":"age_over","value":18}]}'
 ```
 
-### Test Environment
-- **API Keys**: `wg_test_*`
-- **Purpose**: Development and testing
-- **Features**: Mock TSL, no usage limits, test warnings
-- **Cost**: Free for all users
+```python [Python]
+import requests, os
 
-### Live Environment
-- **API Keys**: `wg_live_*`
-- **Purpose**: Production verification
-- **Features**: Real EU LOTL, usage quotas, SLAs
-- **Cost**: Paid plans only
-
-## Handling Rate Limits
-
-Live environment keys have usage quotas. The SDK surfaces 429 details and lets you hook a callback:
-
-```ts
-const eudi = new WalletGate({
-  apiKey: process.env.WALLETGATE_API_KEY!,
-  onRateLimit: (info) => {
-    // info: { message, retryAfterSeconds?, dailyLimit?, monthlyLimit?, upgradeUrl? }
-    console.warn(`Rate limited. ${info.message}. Retry in ~${info.retryAfterSeconds}s.`);
-  },
-});
-
-try {
-  await eudi.startVerification({ checks: [{ type: 'age_over', value: 18 }] });
-} catch (err) {
-  // err.message includes retryAfterSeconds and upgradeUrl when available
-}
+response = requests.post(
+    'https://api.walletgate.app/v1/verify/sessions',
+    headers={'Authorization': f'Bearer {os.getenv("WALLETGATE_API_KEY")}'},
+    json={'checks': [{'type': 'age_over', 'value': 18}]}
+)
+print(response.json())
 ```
 
-**Note**: Test environment API keys have no rate limits or quotas.
+:::
 
-## Framework Examples
+## API Reference (Short)
 
-### Next.js
+- `new WalletGate(config)`
+- `startVerification(input)`
+- `getResult(sessionId)`
+- `verifyWebhook(rawBody, signature, secret, timestamp)`
+- `makeQrDataUrl(url)`
 
-```typescript
-// pages/api/verify.ts
-export default async function handler(req, res) {
-  const eudi = new WalletGate({ apiKey: process.env.WALLETGATE_API_KEY });
-
-  if (req.method === 'POST') {
-    const session = await eudi.startVerification({
-      checks: [{ type: 'age_over', value: 18 }]
-    });
-    res.json(session);
-  }
-}
-
-// components/AgeGate.tsx
-export function AgeGate() {
-  const verifyAge = async () => {
-    const res = await fetch('/api/verify', { method: 'POST' });
-    const { verificationUrl } = await res.json();
-    window.location.href = verificationUrl;
-  };
-
-  return <button onClick={verifyAge}>Verify Age with EUDI Wallet</button>;
-}
-```
-
-### Express.js
-
-```typescript
-import express from 'express';
-import { WalletGate } from '@walletgate/eudi';
-
-const app = express();
-const eudi = new WalletGate({ apiKey: process.env.WALLETGATE_API_KEY });
-
-app.post('/verify/start', async (req, res) => {
-  const session = await eudi.startVerification({
-    checks: req.body.checks,
-    redirectUrl: `${req.protocol}://${req.get('host')}/verify/complete`
-  });
-
-  res.json({
-    sessionId: session.id,
-    walletUrl: session.verificationUrl
-  });
-});
-
-app.get('/verify/:sessionId', async (req, res) => {
-  const result = await eudi.getResult(req.params.sessionId);
-  res.json(result);
-});
-```
-
-## API Reference
-
-### `new WalletGate(config)`
-- `apiKey`: Your WalletGate API key
-- `baseUrl`: API endpoint (optional)
-- `timeout`: Request timeout in ms (optional)
-
-### `startVerification(input)`
-- `checks`: Array of verification requirements
-- `redirectUrl`: Post-verification redirect (optional)
-- Returns: `VerificationSession`
-
-### `getResult(sessionId)`
-- `sessionId`: From `startVerification`
-- Returns: `VerificationResult`
-
-### `verifyWebhook(rawBody, signature, secret, timestamp)`
-- Verify webhook signatures (Node.js only)
-- Returns: `boolean`
-
-Note: For tests and specialized runtimes, you can inject Node's `crypto` as `globalThis.__WG_NODE_CRYPTO`.
-
-### `makeQrDataUrl(url)`
-- Generate QR code for cross-device flow
-- Returns: `Promise<string>` (data URL)
-
-Optional peer dependency: install `qrcode` for built‑in QR support, or inject a generator via `globalThis.__WG_QR`.
-
-## TypeScript Types
-
-```typescript
-interface VerificationCheck {
-  type: 'age_over' | 'residency_eu' | 'identity_verified';
-  value?: number | string;
-}
-
-interface VerificationSession {
-  id: string;
-  verificationUrl?: string;
-  nonce?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
-  environment?: 'test' | 'live';
-  testMode?: boolean;
-  warning?: string;
-  expiresAt: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface VerificationResult {
-  id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
-  results?: Record<string, boolean>;
-  riskScore?: number;
-  aiInsights?: string[];
-  environment?: 'test' | 'live';
-  testMode?: boolean;
-  warning?: string;
-  expiresAt: string;
-  createdAt: string;
-  updatedAt: string;
-}
-```
-
-## Testing
-
-WalletGate provides a comprehensive test environment for safe development:
-
-1. **Get test API key**: https://walletgate.app (free, 100 verifications/month cap per merchant)
-2. **Use test wallet**: Coming soon
-3. **Mock TSL verification**: Uses fake certificates for safe testing
-4. **Test personas**: Adult/minor, EU/non-EU resident options
-5. **Usage**: Test requests don't count towards live plan quotas, but are subject to the 100/month test cap
-
-```typescript
-// Test environment automatically detected from API key prefix
-const testEudi = new WalletGate({
-  apiKey: 'wg_test_your_key_here' // Auto-detected as test environment
-});
-
-const session = await testEudi.startVerification({
-  checks: [{ type: 'age_over', value: 18 }]
-});
-
-console.log(session.environment); // "test"
-console.log(session.testMode);    // true
-console.log(session.warning);     // "THIS IS A TEST VERIFICATION..."
-```
-
-## Technical Details
-
-### Standards & Compliance
-- **OpenID4VP 1.0**: Verifiable presentation protocol
-- **ISO 18013-5**: Mobile driver's license standard
-- **eIDAS 2.0**: EU Digital Identity regulation
-- **EU LOTL**: Real government trust lists
-- **GDPR**: Privacy-first, data minimization
-
-### Security
-- Certificate chain validation to EU roots
-- OCSP/CRL revocation checking (planned; disabled in MVP)
-- HMAC-SHA256 webhook signatures
-- Complete audit trails
-
-## Plans & Limits
-
-- **Free**: Unlimited test + 100 live verifications/month, 2 live API keys
-- **Pro (€29/mo)**: Unlimited test + 1,000 live verifications/month, 5 live API keys, webhooks
-- **Business (€99/mo)**: Unlimited test + 10,000 live verifications/month, 10 live API keys, priority support
-
-All plans include unlimited test environment verifications. Live verifications count against your monthly quota.
+See the docs for full reference, error handling, and examples.
 
 ## Links
 
-- **Get early access**: https://walletgate.app
-- **Documentation**: https://walletgate.app/docs
-- **Support**: support@walletgate.app
-- **Discord community**(https://discord.gg/Sf8P2Vpv)
-- **Security**: security@walletgate.app
+- Docs: https://docs.walletgate.app/
+- Get early access: https://walletgate.app
+- Discord: https://discord.gg/KZ8sP5Ua
+- Support: support@walletgate.app
+- Security: security@walletgate.app
+- Repo: https://github.com/walletgate/eudi-sdk
 
 ## License
 
-Apache-2.0 - See [LICENSE](LICENSE) for details.
+Apache-2.0 - See [LICENSE](LICENSE).
