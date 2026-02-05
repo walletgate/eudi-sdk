@@ -22,7 +22,10 @@ import type { VerificationSession, VerificationResult } from './types';
 import type { CreateSessionInput } from './schemas';
 
 type NodeCryptoLike = {
-  createHmac: (alg: string, secret: string) => {
+  createHmac: (
+    alg: string,
+    secret: string
+  ) => {
     update: (data: string) => { digest: (fmt: 'base64') => string };
   };
   timingSafeEqual: (a: Buffer, b: Buffer) => boolean;
@@ -77,15 +80,13 @@ export class WalletGate {
     return response;
   }
 
-  verifyWebhook(
-    rawBody: string,
-    signature: string,
-    secret: string,
-    timestamp: string
-  ): boolean {
-    const isNode = typeof process !== 'undefined' && !!(process as unknown as { versions?: { node?: string } }).versions?.node;
+  verifyWebhook(rawBody: string, signature: string, secret: string, timestamp: string): boolean {
+    const isNode =
+      typeof process !== 'undefined' &&
+      !!(process as unknown as { versions?: { node?: string } }).versions?.node;
     if (!isNode) throw new Error('verifyWebhook is only supported in Node environments');
-    const injected = (globalThis as unknown as { __WG_NODE_CRYPTO?: NodeCryptoLike }).__WG_NODE_CRYPTO;
+    const injected = (globalThis as unknown as { __WG_NODE_CRYPTO?: NodeCryptoLike })
+      .__WG_NODE_CRYPTO;
     if (!injected) {
       throw new Error('Node crypto module not available');
     }
@@ -111,7 +112,7 @@ export class WalletGate {
           const response = await fetch(`${this.baseUrl}${path}`, {
             ...options,
             headers: {
-              'Authorization': `Bearer ${this.apiKey}`,
+              Authorization: `Bearer ${this.apiKey}`,
               'Content-Type': 'application/json',
               ...options.headers,
             },
@@ -124,31 +125,46 @@ export class WalletGate {
               if (err && err.code === 'RATE_LIMIT_EXCEEDED') {
                 const info: RateLimitInfo = {
                   message: err.message || 'Rate limit exceeded',
-                  retryAfterSeconds: typeof err.retryAfterSeconds === 'number' ? err.retryAfterSeconds : undefined,
+                  retryAfterSeconds:
+                    typeof err.retryAfterSeconds === 'number' ? err.retryAfterSeconds : undefined,
                   monthlyLimit: typeof err.monthlyLimit === 'number' ? err.monthlyLimit : undefined,
                   dailyLimit: typeof err.dailyLimit === 'number' ? err.dailyLimit : undefined,
                   upgradeUrl: typeof err.upgradeUrl === 'string' ? err.upgradeUrl : undefined,
                 };
-                try { this.onRateLimit && this.onRateLimit(info); } catch { void 0; }
+                try {
+                  this.onRateLimit && this.onRateLimit(info);
+                } catch {
+                  void 0;
+                }
                 const details: string[] = [];
-                if (info.retryAfterSeconds) details.push(`retry after ~${Math.ceil(info.retryAfterSeconds)}s`);
+                if (info.retryAfterSeconds)
+                  details.push(`retry after ~${Math.ceil(info.retryAfterSeconds)}s`);
                 if (info.monthlyLimit) details.push(`plan limit: ${info.monthlyLimit}/mo`);
                 if (info.dailyLimit) details.push(`daily cap: ${info.dailyLimit}/24h`);
                 const hint = info.upgradeUrl ? ` — upgrade: ${info.upgradeUrl}` : '';
                 const msg = `Rate limit exceeded (${details.join(', ')})${hint}`;
                 throw new NoRetryError(msg);
               }
-              throw new NoRetryError((err && err.message) || `Request failed with status ${response.status}`);
+              throw new NoRetryError(
+                (err && err.message) || `Request failed with status ${response.status}`
+              );
             }
             const err5 = (await safeJson(response)) as { message?: string } | null;
             throw new Error((err5 && err5.message) || `Server error (${response.status})`);
           }
-          const data = (await safeJson(response)) as T;
-          return data;
+          const raw = (await safeJson(response)) as Record<string, unknown> | null;
+          // Backend wraps successful responses in { success: true, data: {...} }
+          if (raw && typeof raw === 'object' && 'success' in raw && 'data' in raw) {
+            return raw.data as T;
+          }
+          return raw as T;
         } catch (e) {
           if (e instanceof NoRetryError) throw e;
           if (controller.signal.aborted || attempt >= this.retries.maxRetries) throw e;
-          await delay(this.retries.baseDelayMs * Math.pow(this.retries.factor, attempt), this.retries.jitter);
+          await delay(
+            this.retries.baseDelayMs * Math.pow(this.retries.factor, attempt),
+            this.retries.jitter
+          );
           attempt++;
           continue;
         }

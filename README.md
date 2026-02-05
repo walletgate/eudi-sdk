@@ -83,7 +83,7 @@ const eudi = new WalletGate({
 const session = await eudi.startVerification({
   checks: [
     { type: 'age_over', value: 18 },
-    { type: 'residency_in', value: ['EU'] }
+    { type: 'residency_eu' }
   ],
   redirectUrl: 'https://yourapp.com/verify-complete'
 });
@@ -101,10 +101,10 @@ const qrCode = await makeQrDataUrl(session.verificationUrl);
 ```typescript
 const result = await eudi.getResult(sessionId);
 
-if (result.status === 'verified') {
+if (result.status === 'completed') {
   // User successfully verified
-  console.log('Age over 18:', result.checks.age_over_18);
-  console.log('EU resident:', result.checks.eu_resident);
+  console.log('Age over 18:', result.results?.age_over_18);
+  console.log('EU resident:', result.results?.residency_eu);
 }
 ```
 
@@ -113,9 +113,8 @@ if (result.status === 'verified') {
 | Type | Description | Example |
 |------|-------------|---------|
 | `age_over` | Verify minimum age | `{ type: 'age_over', value: 18 }` |
-| `age_under` | Verify maximum age | `{ type: 'age_under', value: 65 }` |
-| `residency_in` | Verify residency | `{ type: 'residency_in', value: ['DE', 'FR'] }` |
-| `name_match` | KYC name matching | `{ type: 'name_match', value: 'John Doe' }` |
+| `residency_eu` | Verify EU residency | `{ type: 'residency_eu' }` |
+| `identity_verified` | Verify identity (KYC) | `{ type: 'identity_verified' }` |
 
 ## Webhooks
 
@@ -288,30 +287,36 @@ Optional peer dependency: install `qrcode` for built‑in QR support, or inject 
 ## TypeScript Types
 
 ```typescript
-interface CheckType {
-  type: 'age_over' | 'age_under' | 'residency_in' | 'name_match';
-  value: number | string | string[];
+interface VerificationCheck {
+  type: 'age_over' | 'residency_eu' | 'identity_verified';
+  value?: number | string;
 }
 
 interface VerificationSession {
   id: string;
-  verificationUrl: string;
-  status: 'pending';
-  environment: 'test' | 'live';
+  verificationUrl?: string;
+  nonce?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
+  environment?: 'test' | 'live';
   testMode?: boolean;
   warning?: string;
+  expiresAt: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface VerificationResult {
   id: string;
-  status: 'pending' | 'verified' | 'failed' | 'expired';
-  environment: 'test' | 'live';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
+  results?: Record<string, boolean>;
+  riskScore?: number;
+  aiInsights?: string[];
+  environment?: 'test' | 'live';
   testMode?: boolean;
   warning?: string;
-  checks: Record<string, boolean>;
-  reason?: string;
-  completedAt?: string;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 ```
 
@@ -357,10 +362,9 @@ console.log(session.warning);     // "THIS IS A TEST VERIFICATION..."
 
 ## Plans & Limits
 
-- **Trial**: Unlimited test verifications + 0 live verifications/month
-- **Starter**: Unlimited test + 150 live verifications/month
-- **Growth**: Unlimited test + 500 live verifications/month
-- **Scale**: Unlimited test + 2,000 live verifications/month
+- **Free**: Unlimited test + 100 live verifications/month, 2 live API keys
+- **Pro (€29/mo)**: Unlimited test + 1,000 live verifications/month, 5 live API keys, webhooks
+- **Business (€99/mo)**: Unlimited test + 10,000 live verifications/month, 10 live API keys, priority support
 
 All plans include unlimited test environment verifications. Live verifications count against your monthly quota.
 

@@ -3,30 +3,40 @@
  */
 
 export interface VerificationCheck {
-  type: 'age_over' | 'residency_in' | 'name_match';
-  value?: number | string | string[];
+  type: 'age_over' | 'residency_eu' | 'identity_verified';
+  value?: number | string;
   passed?: boolean;
 }
 
 export interface VerificationSession {
   id: string;
   merchantId: string;
-  status: 'pending' | 'completed' | 'failed' | 'expired';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
   checks: VerificationCheck[];
   metadata?: Record<string, unknown>;
   redirectUrl?: string;
-  walletRequestUrl?: string;
-  expiresAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  verificationUrl?: string;
+  nonce?: string;
+  environment?: 'test' | 'live';
+  testMode?: boolean;
+  warning?: string;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface VerificationResult {
-  sessionId: string;
-  approved: boolean;
-  checks: VerificationCheck[];
-  auditRef: string;
-  timestamp: Date;
+  id: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
+  results?: Record<string, boolean>;
+  riskScore?: number;
+  aiInsights?: string[];
+  environment?: 'test' | 'live';
+  testMode?: boolean;
+  warning?: string;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiKey {
@@ -54,9 +64,7 @@ export interface Webhook {
 }
 
 export interface ErrorResponse {
+  error: string;
   code: string;
-  message: string;
   details?: unknown;
-  timestamp: string;
-  requestId: string;
 }

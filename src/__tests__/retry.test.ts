@@ -14,11 +14,15 @@ describe('WalletGate retries', () => {
   });
 
   it('retries on 5xx and succeeds', async () => {
-    const wg = new WalletGate({ apiKey: 'wg', baseUrl: 'https://api.local', retries: { maxRetries: 2, baseDelayMs: 1, factor: 1, jitter: false } });
+    const wg = new WalletGate({
+      apiKey: 'wg',
+      baseUrl: 'https://api.local',
+      retries: { maxRetries: 2, baseDelayMs: 1, factor: 1, jitter: false },
+    });
     const responses = [
       { ok: false, status: 500, json: async () => ({ message: 'err1' }) },
       { ok: false, status: 502, json: async () => ({ message: 'err2' }) },
-      { ok: true, json: async () => ({ id: 's1' }) },
+      { ok: true, json: async () => ({ success: true, data: { id: 's1' } }) },
     ];
     let call = 0;
     globalThis.fetch = vi.fn().mockImplementation(async () => responses[call++]) as any;
@@ -29,10 +33,15 @@ describe('WalletGate retries', () => {
   });
 
   it('does not retry on 4xx', async () => {
-    const wg = new WalletGate({ apiKey: 'wg', baseUrl: 'https://api.local', retries: { maxRetries: 3, baseDelayMs: 1, factor: 1, jitter: false } });
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 400, json: async () => ({ message: 'bad' }) }) as any;
+    const wg = new WalletGate({
+      apiKey: 'wg',
+      baseUrl: 'https://api.local',
+      retries: { maxRetries: 3, baseDelayMs: 1, factor: 1, jitter: false },
+    });
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 400, json: async () => ({ message: 'bad' }) }) as any;
     await expect(wg.startVerification({ checks: [] as any })).rejects.toThrow('bad');
     expect((globalThis.fetch as any).mock.calls.length).toBe(1);
   });
 });
-

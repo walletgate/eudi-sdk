@@ -15,7 +15,7 @@ describe('WalletGate SDK', () => {
 
   it('adds Authorization header and calls correct URL', async () => {
     const wg = new WalletGate({ apiKey: 'wg_test_key', baseUrl: 'https://api.local' });
-    const mockRes = { ok: true, json: async () => ({ id: 's1' }) };
+    const mockRes = { ok: true, json: async () => ({ success: true, data: { id: 's1' } }) };
     const spy = vi.fn().mockResolvedValue(mockRes);
     globalThis.fetch = spy as any;
 
@@ -48,8 +48,6 @@ describe('WalletGate SDK', () => {
     const wg = new WalletGate({ apiKey: 'wg', baseUrl: 'https://api.local' });
     const mockRes = { ok: false, status: 400, json: async () => ({ message: 'Bad data' }) };
     globalThis.fetch = vi.fn().mockResolvedValue(mockRes) as any;
-    await expect(
-      wg.startVerification({ checks: [] as any })
-    ).rejects.toThrow('Bad data');
+    await expect(wg.startVerification({ checks: [] as any })).rejects.toThrow('Bad data');
   });
 });

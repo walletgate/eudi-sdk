@@ -320,7 +320,7 @@ class WalletGate
     raise ArgumentError, 'At least one check is required' if checks.empty?
     raise ArgumentError, 'Maximum 10 checks allowed' if checks.length > 10
 
-    valid_types = %w[age_over residency_eu identity_verified residency_in name_match]
+    valid_types = %w[age_over residency_eu identity_verified]
 
     checks.each_with_index do |check, index|
       raise ArgumentError, "Check #{index} must be a hash" unless check.is_a?(Hash)
