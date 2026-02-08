@@ -10,6 +10,25 @@
 
 WalletGate is a Verifier/Relying Party SDK for the EU Digital Identity Wallet ecosystem. It lets you create verification sessions, direct users to their wallet, and fetch signed results using real EU trust infrastructure.
 
+## How it works
+
+Simple verification flow with a smooth user journey.
+
+```
++-------------------------+       +----------------------+       +----------------------+
+|  1. Show QR             |       |  2. User approves    |       |  3. Verified          |
+|                         |       |                      |       |                      |
+|  your-app.com/checkout  |  -->  |  Age Verification    |  -->  |      Verified        |
+|                         |       |  your-app.com        |       |  Age 18+ confirmed   |
+|  [QR Code]              |       |  Age over 18  [x]    |       |                      |
+|  Scan with EUDI Wallet  |       |  [Approve]           |       |      [Done]          |
++-------------------------+       +----------------------+       +----------------------+
+```
+
+1. **Show QR** -- Your app creates a verification session and displays a QR code
+2. **User approves** -- The user scans with their EUDI Wallet and approves the data request
+3. **Verified** -- Your app receives the cryptographically signed result
+
 ## Installation
 
 ::: code-group
