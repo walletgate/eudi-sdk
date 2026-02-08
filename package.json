@@ -22,7 +22,7 @@
     "build:browser": "esbuild src/index.ts --bundle --platform=browser --target=es2020 --outfile=dist/browser/index.js",
     "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap",
     "clean": "rm -rf dist",
-    "test": "vitest run --reporter=basic 2>/dev/null || vitest run --reporter=basic",
+    "test": "vitest run",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
@@ -48,8 +48,8 @@
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
-    "@vitest/coverage-v8": "^1.2.0",
-    "esbuild": "^0.19.11",
+    "@vitest/coverage-v8": "^4.0.18",
+    "esbuild": "^0.27.3",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
@@ -59,7 +59,7 @@
     "qrcode": "^1.5.4",
     "typedoc": "^0.25.7",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.0"
+    "vitest": "^4.0.18"
   },
   "peerDependencies": {
     "typescript": ">=4.5.0"
