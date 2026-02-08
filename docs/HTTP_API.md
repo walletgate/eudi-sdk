@@ -48,20 +48,24 @@ Creates a new verification session and returns a URL for the user's wallet.
 **Response:**
 ```json
 {
-  "id": "sess_abc123def456",
-  "merchantId": "merchant_789",
-  "status": "pending",
-  "checks": [
-    {
-      "type": "age_over",
-      "value": 18,
-      "passed": null
-    }
-  ],
-  "walletRequestUrl": "https://test-wallet.walletgate.app/verify/sess_abc123def456",
-  "expiresAt": "2025-09-25T19:30:00Z",
-  "createdAt": "2025-09-25T18:30:00Z",
-  "updatedAt": "2025-09-25T18:30:00Z"
+  "success": true,
+  "data": {
+    "id": "sess_abc123def456",
+    "status": "pending",
+    "checks": [
+      {
+        "type": "age_over",
+        "value": 18
+      }
+    ],
+    "verificationUrl": "openid4vp://?client_id=...&presentation_definition=...",
+    "nonce": "f31a5e6b1d6d4c4a9a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d",
+    "expiresAt": "2025-09-25T19:30:00Z",
+    "createdAt": "2025-09-25T18:30:00Z",
+    "environment": "test",
+    "testMode": true,
+    "warning": "THIS IS A TEST VERIFICATION - NOT A REAL CREDENTIAL CHECK"
+  }
 }
 ```
 
@@ -74,30 +78,49 @@ Retrieves the current status and result of a verification session.
 **Response (Pending):**
 ```json
 {
-  "sessionId": "sess_abc123def456",
-  "status": "pending",
-  "message": "Waiting for user to complete verification"
+  "success": true,
+  "data": {
+    "id": "sess_abc123def456",
+    "status": "pending",
+    "checks": [
+      {
+        "type": "age_over",
+        "value": 18
+      }
+    ],
+    "createdAt": "2025-09-25T18:30:00Z",
+    "expiresAt": "2025-09-25T19:30:00Z",
+    "environment": "test",
+    "testMode": true,
+    "warning": "THIS IS A TEST VERIFICATION - NOT A REAL CREDENTIAL CHECK"
+  }
 }
 ```
 
 **Response (Completed):**
 ```json
 {
-  "sessionId": "sess_abc123def456",
-  "approved": true,
-  "checks": [
-    {
-      "type": "age_over",
-      "value": 18,
-      "passed": true
+  "success": true,
+  "data": {
+    "id": "sess_abc123def456",
+    "status": "completed",
+    "checks": [
+      {
+        "type": "age_over",
+        "value": 18
+      },
+      {
+        "type": "residency_eu"
+      }
+    ],
+    "results": {
+      "age_over_18": true,
+      "residency_eu": true,
+      "identity_verified": true
     },
-    {
-      "type": "residency_eu",
-      "passed": true
-    }
-  ],
-  "auditRef": "audit_xyz789",
-  "timestamp": "2025-09-25T18:35:00Z"
+    "riskScore": 0.1,
+    "aiInsights": ["Low risk transaction"]
+  }
 }
 ```
 
@@ -163,9 +186,10 @@ class WalletGate
     loop do
       begin
         result = get_result(session_id)
+        session = result['data']
 
-        # Return if completed or failed
-        return result if result['approved'] == true || result['approved'] == false
+        # Return if terminal
+        return session if session && %w[completed failed expired].include?(session['status'])
 
         # Check timeout
         if Time.now - start_time > max_wait_seconds
@@ -349,7 +373,7 @@ end
 begin
   client = WalletGate.new(ENV['WALLETGATE_API_KEY'])
 
-  session = client.start_verification(
+  create = client.start_verification(
     checks: [
       { type: 'age_over', value: 18 },
       { type: 'residency_eu' }
@@ -359,19 +383,20 @@ begin
     metadata: { user_id: 'user_123', source: 'checkout' }
   )
 
-  puts "Verification URL: #{session['walletRequestUrl']}"
+  session = create['data']
+  puts "Verification URL: #{session['verificationUrl']}"
   puts "Session ID: #{session['id']}"
 
   # Poll for result (alternative to webhooks)
   result = client.poll_for_result(session['id'], max_wait_seconds: 300)
 
-  if result['approved']
+  if result['status'] == 'completed'
     puts "Verification successful!"
-    result['checks'].each do |check|
-      puts "  #{check['type']}: #{check['passed'] ? 'PASS' : 'FAIL'}"
+    (result['results'] || {}).each do |key, passed|
+      puts "  #{key}: #{passed ? 'PASS' : 'FAIL'}"
     end
   else
-    puts "Verification failed"
+    puts "Verification failed or expired"
   end
 
 rescue WalletGateError => e
@@ -388,7 +413,7 @@ end
 # Usage
 client = WalletGate.new(ENV['WALLETGATE_API_KEY'])
 
-session = client.start_verification(
+create = client.start_verification(
   checks: [
     { type: 'age_over', value: 18 },
     { type: 'residency_eu' }
@@ -397,7 +422,8 @@ session = client.start_verification(
   webhook_url: 'https://myapp.com/webhook'
 )
 
-puts "Verification URL: #{session['walletRequestUrl']}"
+session = create['data']
+puts "Verification URL: #{session['verificationUrl']}"
 ```
 
 ### PHP
@@ -472,12 +498,13 @@ class WalletGate {
 // Usage
 $client = new WalletGate($_ENV['WALLETGATE_API_KEY']);
 
-$session = $client->startVerification([
+$response = $client->startVerification([
     ['type' => 'age_over', 'value' => 18],
     ['type' => 'residency_eu']
 ], 'https://myapp.com/success', 'https://myapp.com/webhook');
 
-echo "Verification URL: " . $session['walletRequestUrl'] . "\n";
+$session = $response['data'];
+echo "Verification URL: " . $session['verificationUrl'] . "\n";
 ?>
 ```
 
@@ -528,7 +555,7 @@ public class WalletGate {
         HttpResponse<String> response = httpClient.send(request,
             HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() != 200) {
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new RuntimeException("API Error: " + response.statusCode() + " - " + response.body());
         }
 
@@ -546,7 +573,7 @@ public class WalletGate {
         HttpResponse<String> response = httpClient.send(request,
             HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() != 200) {
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new RuntimeException("API Error: " + response.statusCode() + " - " + response.body());
         }
 
@@ -562,14 +589,15 @@ var checks = new Object[] {
     Map.of("type", "residency_eu")
 };
 
-JsonNode session = client.startVerification(
+JsonNode response = client.startVerification(
     checks,
     "https://myapp.com/success",
     "https://myapp.com/webhook",
     null
 );
 
-System.out.println("Verification URL: " + session.get("walletRequestUrl").asText());
+JsonNode session = response.get("data");
+System.out.println("Verification URL: " + session.get("verificationUrl").asText());
 ```
 
 ### Python
@@ -612,7 +640,7 @@ class WalletGate:
             timeout=30
         )
 
-        if response.status_code != 200:
+        if response.status_code < 200 or response.status_code >= 300:
             raise Exception(f"API Error: {response.status_code} - {response.text}")
 
         return response.json()
@@ -623,7 +651,7 @@ class WalletGate:
             timeout=30
         )
 
-        if response.status_code != 200:
+        if response.status_code < 200 or response.status_code >= 300:
             raise Exception(f"API Error: {response.status_code} - {response.text}")
 
         return response.json()
@@ -633,7 +661,7 @@ import os
 
 client = WalletGate(os.getenv('WALLETGATE_API_KEY'))
 
-session = client.start_verification(
+response = client.start_verification(
     checks=[
         {"type": "age_over", "value": 18},
         {"type": "residency_eu"}
@@ -642,7 +670,8 @@ session = client.start_verification(
     webhook_url="https://myapp.com/webhook"
 )
 
-print(f"Verification URL: {session['walletRequestUrl']}")
+session = response["data"]
+print(f"Verification URL: {session['verificationUrl']}")
 ```
 
 ### Go
@@ -715,7 +744,7 @@ func (w *WalletGate) StartVerification(req StartVerificationRequest) (map[string
         return nil, err
     }
 
-    if resp.StatusCode != 200 {
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
         return nil, fmt.Errorf("API Error: %d - %s", resp.StatusCode, string(body))
     }
 
@@ -743,7 +772,7 @@ func (w *WalletGate) GetResult(sessionID string) (map[string]interface{}, error)
         return nil, err
     }
 
-    if resp.StatusCode != 200 {
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
         return nil, fmt.Errorf("API Error: %d - %s", resp.StatusCode, string(body))
     }
 
@@ -756,7 +785,7 @@ func (w *WalletGate) GetResult(sessionID string) (map[string]interface{}, error)
 func main() {
     client := NewWalletGate(os.Getenv("WALLETGATE_API_KEY"))
 
-    session, err := client.StartVerification(StartVerificationRequest{
+    response, err := client.StartVerification(StartVerificationRequest{
         Checks: []VerificationCheck{
             {Type: "age_over", Value: 18},
             {Type: "residency_eu"},
@@ -769,7 +798,8 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("Verification URL: %s\n", session["walletRequestUrl"])
+    session := response["data"].(map[string]interface{})
+    fmt.Printf("Verification URL: %s\n", session["verificationUrl"])
 }
 ```
 
@@ -778,8 +808,10 @@ func main() {
 ### HTTP Status Codes
 
 - **200 OK** - Request successful
+- **201 Created** - Session created
 - **400 Bad Request** - Invalid request format
 - **401 Unauthorized** - Invalid or missing API key
+- **404 Not Found** - Session not found
 - **429 Too Many Requests** - Rate limit exceeded
 - **500 Internal Server Error** - Server error
 
@@ -787,14 +819,14 @@ func main() {
 
 ```json
 {
-  "code": "INVALID_REQUEST",
-  "message": "Invalid check type specified",
-  "details": {
-    "field": "checks[0].type",
-    "value": "invalid_check_type"
-  },
-  "timestamp": "2025-09-25T18:30:00Z",
-  "requestId": "req_abc123"
+  "error": "Invalid request data",
+  "code": "VALIDATION_ERROR",
+  "details": [
+    {
+      "path": ["checks", 0, "type"],
+      "message": "Invalid check type"
+    }
+  ]
 }
 ```
 
@@ -848,15 +880,24 @@ function verifyWebhook($payload, $signature, $secret, $timestamp) {
 
 ## Rate Limits
 
-### Trial Plan (Free)
-- **Unlimited test verifications** + 0 live verifications/month
-- **No rate limits** (reasonable use)
+### Free
+- **Unlimited test verifications** (global rate limits still apply)
+- **100 live verifications/month**
 
-### Paid Tiers
-- **Starter (€29/month):** Unlimited test + 150 live verifications/month
-- **Growth (€79/month):** Unlimited test + 500 live verifications/month
-- **Scale (€149/month):** Unlimited test + 2,000 live verifications/month
-- **Enterprise:** Custom pricing, unlimited
+### Pro
+- **Unlimited test verifications**
+- **1,000 live verifications/month**
+
+### Business
+- **Unlimited test verifications**
+- **10,000 live verifications/month**
+
+### Enterprise
+- Custom pricing and higher limits
+
+### Rate Limits
+- **Live keys**: 60 requests/minute per key
+- **Global**: 300 requests/minute per IP
 
 ### Rate Limit Headers
 
@@ -873,7 +914,7 @@ X-RateLimit-Reset: 1698796800
 Use the test wallet for development:
 
 1. **Create verification session** with your API key
-2. **Open `walletRequestUrl`** in browser
+2. **Open `verificationUrl`** in browser
 3. **Select test persona** (Maria 18+ Spain, John 30 USA, etc.)
 4. **Complete verification** and see results
 

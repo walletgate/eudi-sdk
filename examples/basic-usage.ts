@@ -39,7 +39,7 @@ async function basicVerification(): Promise<void> {
     });
 
     console.log(`Session created with ID: ${session.id}`);
-    console.log(`Wallet request URL: ${session.walletRequestUrl}`);
+    console.log(`Verification URL: ${session.verificationUrl}`);
     console.log(`Session expires at: ${session.expiresAt}`);
 
     console.log('Polling for result...');
@@ -47,34 +47,29 @@ async function basicVerification(): Promise<void> {
     const maxAttempts: number = 30;
 
     while (attempts < maxAttempts) {
-      try {
-        const result: VerificationResult = await client.getResult(session.id);
+      const result: VerificationResult = await client.getResult(session.id);
 
-        if (result.approved) {
-          console.log('✅ Verification successful!');
-          console.log('Checks passed:');
-          result.checks.forEach(check => {
-            console.log(`  - ${check.type}: ${check.passed ? '✅' : '❌'}`);
-          });
-          console.log(`Audit reference: ${result.auditRef}`);
-          break;
-        } else {
-          console.log('❌ Verification failed');
-          console.log('Check results:');
-          result.checks.forEach(check => {
-            console.log(`  - ${check.type}: ${check.passed ? '✅' : '❌'}`);
-          });
-          break;
-        }
-      } catch (error: any) {
-        if (error.message?.includes('pending')) {
-          console.log(`Attempt ${attempts + 1}: Still pending...`);
-          await new Promise(resolve => setTimeout(resolve, 10000));
-          attempts++;
-          continue;
-        }
-        throw error;
+      if (result.status === 'completed') {
+        console.log('✅ Verification successful!');
+        console.log('Results:');
+        Object.entries(result.results || {}).forEach(([key, passed]) => {
+          console.log(`  - ${key}: ${passed ? '✅' : '❌'}`);
+        });
+        break;
       }
+
+      if (result.status === 'failed' || result.status === 'expired') {
+        console.log('❌ Verification failed or expired');
+        console.log('Results:');
+        Object.entries(result.results || {}).forEach(([key, passed]) => {
+          console.log(`  - ${key}: ${passed ? '✅' : '❌'}`);
+        });
+        break;
+      }
+
+      console.log(`Attempt ${attempts + 1}: Still ${result.status}...`);
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      attempts++;
     }
 
     if (attempts >= maxAttempts) {

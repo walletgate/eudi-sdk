@@ -88,24 +88,13 @@ class VerificationService {
     try {
       const result = await this.client.getResult(sessionId);
 
-      console.log(`Session ${result.sessionId} - Approved: ${result.approved}`);
-      console.log(`Audit reference: ${result.auditRef}`);
-      console.log(`Completed at: ${result.timestamp}`);
+      console.log(`Session ${result.id} - Status: ${result.status}`);
+      if (typeof result.riskScore === 'number') {
+        console.log(`Risk score: ${result.riskScore}`);
+      }
 
-      result.checks.forEach(check => {
-        switch (check.type) {
-          case 'age_over':
-            console.log(`Age verification (${check.value}+): ${check.passed ? '✅' : '❌'}`);
-            break;
-          case 'residency_eu':
-            console.log(`EU residency: ${check.passed ? '✅' : '❌'}`);
-            break;
-          case 'identity_verified':
-            console.log(`Identity verified: ${check.passed ? '✅' : '❌'}`);
-            break;
-          default:
-            console.log(`${check.type}: ${check.passed ? '✅' : '❌'}`);
-        }
+      Object.entries(result.results || {}).forEach(([key, passed]) => {
+        console.log(`${key}: ${passed ? '✅' : '❌'}`);
       });
 
       return result;
@@ -124,19 +113,15 @@ class VerificationService {
     let delay: number = initialDelayMs;
 
     while (Date.now() - startTime < maxWaitTimeMs) {
-      try {
-        const result: VerificationResult = await this.getVerificationResult(sessionId);
-        return result;
-      } catch (error: any) {
-        if (error.message?.includes('pending') || error.response?.status === 404) {
-          console.log(`Waiting ${delay}ms before checking again...`);
-          await new Promise<void>(resolve => setTimeout(resolve, delay));
-          delay = Math.min(delay * 1.5, 30000);
-          continue;
-        }
+      const result: VerificationResult = await this.getVerificationResult(sessionId);
 
-        throw error;
+      if (['completed', 'failed', 'expired'].includes(result.status)) {
+        return result;
       }
+
+      console.log(`Waiting ${delay}ms before checking again...`);
+      await new Promise<void>(resolve => setTimeout(resolve, delay));
+      delay = Math.min(delay * 1.5, 30000);
     }
 
     throw new Error(`Verification timeout after ${maxWaitTimeMs}ms`);
@@ -152,10 +137,10 @@ async function main(): Promise<void> {
     console.log('Waiting for user to complete verification...');
     const result: VerificationResult = await verificationService.waitForVerification(session.id);
 
-    if (result.approved) {
+    if (result.status === 'completed') {
       console.log('🎉 Verification successful!');
     } else {
-      console.log('❌ Verification failed');
+      console.log('❌ Verification failed or expired');
     }
 
   } catch (error: any) {
@@ -167,16 +152,7 @@ interface WebhookPayload {
   event: string;
   sessionId: string;
   merchantId: string;
-  data: {
-    approved?: boolean;
-    checks?: Array<{
-      type: string;
-      passed: boolean;
-      value?: number | string;
-    }>;
-    sessionId?: string;
-    auditRef?: string;
-  };
+  data: Record<string, boolean>;
   timestamp: string;
 }
 

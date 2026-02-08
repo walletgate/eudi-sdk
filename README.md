@@ -96,6 +96,11 @@ const qrCode = await makeQrDataUrl(session.verificationUrl);
 ## Webhook Verification (Node)
 
 ```ts
+import * as crypto from 'crypto';
+
+// Required for verifyWebhook in Node environments
+(globalThis as any).__WG_NODE_CRYPTO = crypto;
+
 app.post('/webhooks/walletgate', (req, res) => {
   const signature = req.headers['wg-signature'];
   const timestamp = req.headers['wg-timestamp'];

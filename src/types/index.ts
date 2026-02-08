@@ -10,10 +10,8 @@ export interface VerificationCheck {
 
 export interface VerificationSession {
   id: string;
-  merchantId: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
   checks: VerificationCheck[];
-  metadata?: Record<string, unknown>;
   redirectUrl?: string;
   verificationUrl?: string;
   nonce?: string;
@@ -22,21 +20,21 @@ export interface VerificationSession {
   warning?: string;
   expiresAt: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface VerificationResult {
   id: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
+  checks: VerificationCheck[];
   results?: Record<string, boolean>;
   riskScore?: number;
   aiInsights?: string[];
+  redirectUrl?: string;
   environment?: 'test' | 'live';
   testMode?: boolean;
   warning?: string;
   expiresAt: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface ApiKey {

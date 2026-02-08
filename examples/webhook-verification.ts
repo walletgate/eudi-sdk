@@ -12,7 +12,7 @@
 import { WalletGate, WebhookPayload } from '@walletgate/eudi';
 import * as crypto from 'crypto';
 
-global.__WG_NODE_CRYPTO = crypto;
+globalThis.__WG_NODE_CRYPTO = crypto;
 
 const client = new WalletGate({
   apiKey: process.env.WALLETGATE_API_KEY || 'your-api-key'
@@ -29,8 +29,8 @@ interface Response {
 }
 
 function verifyWebhook(req: Request): boolean {
-  const signature = req.headers['x-walletgate-signature'];
-  const timestamp = req.headers['x-walletgate-timestamp'];
+  const signature = req.headers['wg-signature'];
+  const timestamp = req.headers['wg-timestamp'];
   const rawBody = JSON.stringify(req.body);
   const webhookSecret = process.env.WEBHOOK_SECRET;
 
@@ -61,27 +61,30 @@ function handleWebhook(payload: WebhookPayload): void {
   console.log('Merchant ID:', payload.merchantId);
 
   switch (payload.event) {
-    case 'verification.completed':
+    case 'verification.completed': {
       console.log('🎉 Verification completed');
-      if (payload.data.approved) {
-        console.log('✅ User verified successfully');
+      const results = payload.data || {};
+      const failed = Object.entries(results).filter(([, passed]) => passed === false);
+      if (failed.length === 0) {
+        console.log('✅ Verification checks passed');
         // Handle successful verification
-        updateUserStatus(payload.data.sessionId, 'verified');
+        updateUserStatus(payload.sessionId, 'verified');
       } else {
-        console.log('❌ User verification failed');
+        console.log('❌ Verification checks failed');
         // Handle failed verification
-        updateUserStatus(payload.data.sessionId, 'failed');
+        updateUserStatus(payload.sessionId, 'failed');
       }
       break;
+    }
 
     case 'verification.expired':
       console.log('⏱️ Verification session expired');
-      updateUserStatus(payload.data.sessionId, 'expired');
+      updateUserStatus(payload.sessionId, 'expired');
       break;
 
     case 'verification.failed':
       console.log('💥 Verification session failed');
-      updateUserStatus(payload.data.sessionId, 'failed');
+      updateUserStatus(payload.sessionId, 'failed');
       break;
 
     default:
@@ -115,19 +118,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     sessionId: 'sess_123456789',
     merchantId: 'merchant_123',
     data: {
-      approved: true,
-      checks: [
-        { type: 'age_over', value: 18, passed: true },
-        { type: 'residency_eu', passed: true }
-      ]
+      age_over_18: true,
+      residency_eu: true,
+      identity_verified: true
     },
     timestamp: new Date().toISOString()
   };
 
   const mockReq: Request = {
     headers: {
-      'x-walletgate-signature': 'mock_signature',
-      'x-walletgate-timestamp': Date.now().toString()
+      'wg-signature': 'mock_signature',
+      'wg-timestamp': Date.now().toString()
     },
     body: mockPayload
   };

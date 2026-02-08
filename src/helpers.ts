@@ -18,27 +18,38 @@
  * limitations under the License.
  */
 
-export function buildDeepLinkUrl(walletRequestUrl: string): string {
-  if (typeof walletRequestUrl !== 'string' || walletRequestUrl.length === 0) {
-    throw new Error('walletRequestUrl is required');
+export function buildDeepLinkUrl(verificationUrl: string): string {
+  if (typeof verificationUrl !== 'string' || verificationUrl.length === 0) {
+    throw new Error('verificationUrl is required');
   }
-  if (!/^https?:\/\//i.test(walletRequestUrl) && !/^[a-z][a-z0-9+.-]*:/i.test(walletRequestUrl)) {
-    throw new Error('Invalid walletRequestUrl');
+  if (!/^https?:\/\//i.test(verificationUrl) && !/^[a-z][a-z0-9+.-]*:/i.test(verificationUrl)) {
+    throw new Error('Invalid verificationUrl');
   }
-  return walletRequestUrl;
+  return verificationUrl;
 }
 
 export async function makeQrDataUrl(url: string): Promise<string> {
   if (typeof url !== 'string' || url.length === 0) throw new Error('URL required');
-  const injected = (globalThis as { __WG_QR?: { toDataURL?: (url: string, opts: { margin: number; scale: number }) => Promise<string> } }).__WG_QR;
+  const injected = (
+    globalThis as {
+      __WG_QR?: {
+        toDataURL?: (url: string, opts: { margin: number; scale: number }) => Promise<string>;
+      };
+    }
+  ).__WG_QR;
   if (injected && typeof injected.toDataURL === 'function') {
     return await injected.toDataURL(url, { margin: 1, scale: 4 });
   }
   try {
-    const mod = await import('qrcode') as { toDataURL?: (url: string, opts: { margin: number; scale: number }) => Promise<string> };
-    if (!mod || typeof mod.toDataURL !== 'function') throw new Error('qrcode.toDataURL not available');
+    const mod = (await import('qrcode')) as {
+      toDataURL?: (url: string, opts: { margin: number; scale: number }) => Promise<string>;
+    };
+    if (!mod || typeof mod.toDataURL !== 'function')
+      throw new Error('qrcode.toDataURL not available');
     return await mod.toDataURL(url, { margin: 1, scale: 4 });
   } catch (e) {
-    throw new Error('QR generator not available. Install optional peer dependency "qrcode" to enable QR generation.');
+    throw new Error(
+      'QR generator not available. Install optional peer dependency "qrcode" to enable QR generation.'
+    );
   }
 }
