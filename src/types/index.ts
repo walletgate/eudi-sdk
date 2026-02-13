@@ -10,9 +10,12 @@ export interface VerificationCheck {
 
 export interface VerificationSession {
   id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired' | 'canceled';
   checks: VerificationCheck[];
   redirectUrl?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+  hostedUrl?: string;
   verificationUrl?: string;
   nonce?: string;
   environment?: 'test' | 'live';
@@ -24,7 +27,7 @@ export interface VerificationSession {
 
 export interface VerificationResult {
   id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'expired' | 'canceled';
   checks: VerificationCheck[];
   results?: Record<string, boolean>;
   riskScore?: number;

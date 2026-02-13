@@ -12,6 +12,8 @@ export const VerificationCheckSchema = z.object({
 export const CreateSessionSchema = z.object({
   checks: z.array(VerificationCheckSchema).min(1).max(10),
   redirectUrl: z.string().url().optional(),
+  successUrl: z.string().url().optional(),
+  cancelUrl: z.string().url().optional(),
   webhookUrl: z.string().url().optional(),
   metadata: z.record(z.any()).optional(),
   enableAI: z.boolean().optional(),
