@@ -73,16 +73,35 @@ const eudi = new WalletGate({
 
 ### 2. Start Verification
 
+**Option A: Hosted Page (recommended)** — We handle the UI.
+
 ```ts
 const session = await eudi.startVerification({
   checks: [
     { type: 'age_over', value: 18 },
     { type: 'residency_eu' }
   ],
-  redirectUrl: 'https://yourapp.com/verify-complete'
+  successUrl: 'https://yourapp.com/verified',
+  cancelUrl: 'https://yourapp.com/checkout'
 });
 
-// Redirect user to wallet
+// Redirect user to WalletGate's hosted verification page
+window.location.href = session.hostedUrl;
+```
+
+The hosted page handles QR codes, wallet deep-linking, and real-time status updates. The user is redirected back to your `successUrl` or `cancelUrl` with a signed JWT token.
+
+**Option B: Custom UI** — Render your own QR code.
+
+```ts
+const session = await eudi.startVerification({
+  checks: [
+    { type: 'age_over', value: 18 },
+    { type: 'residency_eu' }
+  ]
+});
+
+// Show the verification URL as a QR code in your own UI
 window.location.href = session.verificationUrl;
 ```
 
@@ -96,6 +115,10 @@ if (result.status === 'completed') {
   console.log('EU resident:', result.results?.residency_eu);
 }
 ```
+
+### Test Wallet Simulator
+
+In test mode (`wg_test_*` keys), the hosted page includes a "Use Test Wallet" button. This opens a browser-based simulator that lets you approve or reject verification without a real EUDI Wallet — perfect for end-to-end testing during development.
 
 ## QR Code Helper (Optional)
 
