@@ -1,6 +1,6 @@
 {
   "name": "@walletgate/eudi",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "description": "EUDI Wallet SDK for JavaScript/TypeScript - EU Digital Identity verification made simple",
   "main": "dist/node/index.js",
