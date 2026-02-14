@@ -44,6 +44,32 @@ export interface WalletGateConfig {
   onRateLimit?: (info: RateLimitInfo) => void;
 }
 
+export type StartVerificationOptions = {
+  idempotencyKey?: string;
+};
+
+export class WalletGateApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly details?: unknown;
+  readonly body?: unknown;
+
+  constructor(args: {
+    message: string;
+    status: number;
+    code?: string;
+    details?: unknown;
+    body?: unknown;
+  }) {
+    super(args.message);
+    this.name = 'WalletGateApiError';
+    this.status = args.status;
+    this.code = args.code;
+    this.details = args.details;
+    this.body = args.body;
+  }
+}
+
 export class WalletGate {
   private apiKey: string;
   private baseUrl: string;
@@ -65,10 +91,16 @@ export class WalletGate {
     this.onRateLimit = config.onRateLimit;
   }
 
-  async startVerification(input: CreateSessionInput): Promise<VerificationSession> {
+  async startVerification(
+    input: CreateSessionInput,
+    opts?: StartVerificationOptions
+  ): Promise<VerificationSession> {
+    const headers: Record<string, string> = {};
+    if (opts?.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
     const response = await this.request<VerificationSession>('/v1/verify/sessions', {
       method: 'POST',
       body: JSON.stringify(input),
+      headers,
     });
     return response;
   }
@@ -120,16 +152,59 @@ export class WalletGate {
           });
 
           if (!response.ok) {
+            const body = (await safeJson(response)) as
+              | (RateLimitInfo & {
+                  code?: string;
+                  error?: string;
+                  message?: string;
+                  details?: unknown;
+                })
+              | Record<string, unknown>
+              | null;
+            const msgFromBody =
+              body && typeof body === 'object'
+                ? typeof (body as any).error === 'string'
+                  ? (body as any).error
+                  : typeof (body as any).message === 'string'
+                    ? (body as any).message
+                    : undefined
+                : undefined;
+            const code =
+              body && typeof body === 'object' && typeof (body as any).code === 'string'
+                ? String((body as any).code)
+                : undefined;
+            const details = body && typeof body === 'object' ? (body as any).details : undefined;
+
             if (response.status >= 400 && response.status < 500) {
-              const err = (await safeJson(response)) as (RateLimitInfo & { code?: string }) | null;
-              if (err && err.code === 'RATE_LIMIT_EXCEEDED') {
+              if (code === 'RATE_LIMIT_EXCEEDED') {
                 const info: RateLimitInfo = {
-                  message: err.message || 'Rate limit exceeded',
+                  message:
+                    (body &&
+                    typeof body === 'object' &&
+                    (typeof (body as any).error === 'string' ||
+                      typeof (body as any).message === 'string')
+                      ? (body as any).error || (body as any).message
+                      : undefined) || 'Rate limit exceeded',
                   retryAfterSeconds:
-                    typeof err.retryAfterSeconds === 'number' ? err.retryAfterSeconds : undefined,
-                  monthlyLimit: typeof err.monthlyLimit === 'number' ? err.monthlyLimit : undefined,
-                  dailyLimit: typeof err.dailyLimit === 'number' ? err.dailyLimit : undefined,
-                  upgradeUrl: typeof err.upgradeUrl === 'string' ? err.upgradeUrl : undefined,
+                    body &&
+                    typeof body === 'object' &&
+                    typeof (body as any).retryAfterSeconds === 'number'
+                      ? (body as any).retryAfterSeconds
+                      : undefined,
+                  monthlyLimit:
+                    body &&
+                    typeof body === 'object' &&
+                    typeof (body as any).monthlyLimit === 'number'
+                      ? (body as any).monthlyLimit
+                      : undefined,
+                  dailyLimit:
+                    body && typeof body === 'object' && typeof (body as any).dailyLimit === 'number'
+                      ? (body as any).dailyLimit
+                      : undefined,
+                  upgradeUrl:
+                    body && typeof body === 'object' && typeof (body as any).upgradeUrl === 'string'
+                      ? (body as any).upgradeUrl
+                      : undefined,
                 };
                 try {
                   this.onRateLimit && this.onRateLimit(info);
@@ -143,14 +218,29 @@ export class WalletGate {
                 if (info.dailyLimit) details.push(`daily cap: ${info.dailyLimit}/24h`);
                 const hint = info.upgradeUrl ? ` — upgrade: ${info.upgradeUrl}` : '';
                 const msg = `Rate limit exceeded (${details.join(', ')})${hint}`;
-                throw new NoRetryError(msg);
+                throw new WalletGateApiError({
+                  message: msg,
+                  status: response.status,
+                  code,
+                  details,
+                  body,
+                });
               }
-              throw new NoRetryError(
-                (err && err.message) || `Request failed with status ${response.status}`
-              );
+              throw new WalletGateApiError({
+                message: msgFromBody || `Request failed with status ${response.status}`,
+                status: response.status,
+                code,
+                details,
+                body,
+              });
             }
-            const err5 = (await safeJson(response)) as { message?: string } | null;
-            throw new Error((err5 && err5.message) || `Server error (${response.status})`);
+            throw new WalletGateApiError({
+              message: msgFromBody || `Server error (${response.status})`,
+              status: response.status,
+              code,
+              details,
+              body,
+            });
           }
           const raw = (await safeJson(response)) as Record<string, unknown> | null;
           // Backend wraps successful responses in { success: true, data: {...} }
@@ -159,7 +249,7 @@ export class WalletGate {
           }
           return raw as T;
         } catch (e) {
-          if (e instanceof NoRetryError) throw e;
+          if (e instanceof WalletGateApiError && e.status < 500) throw e;
           if (controller.signal.aborted || attempt >= this.retries.maxRetries) throw e;
           await delay(
             this.retries.baseDelayMs * Math.pow(this.retries.factor, attempt),
@@ -187,8 +277,6 @@ function delay(ms: number, jitter: boolean): Promise<void> {
   const jitterMs = jitter ? Math.floor(Math.random() * (ms / 2)) : 0;
   return new Promise((resolve) => setTimeout(resolve, ms + jitterMs));
 }
-
-class NoRetryError extends Error {}
 
 export * from './types';
 export * from './schemas';
