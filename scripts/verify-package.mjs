@@ -42,8 +42,24 @@ const check = (name, fn) => {
 };
 
 const work = mkdtempSync(join(tmpdir(), 'walletgate-pkg-'));
+
+// This script runs as prepublishOnly, so npm has exported its own configuration
+// into the environment. Inheriting it corrupts the nested npm calls — most
+// sharply under `npm publish --dry-run`, where npm_config_dry_run=true makes the
+// nested `npm install` exit 0 while installing absolutely nothing, so every
+// check below then fails against an empty directory. Strip npm's config so the
+// nested commands behave the same however this script was invoked.
+const hermeticEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([k]) => !/^npm_/i.test(k) && !/^NPM_CONFIG_/i.test(k)),
+);
+
 const run = (cmd, args, cwd) =>
-  execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  execFileSync(cmd, args, {
+    cwd,
+    env: hermeticEnv,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
 
 try {
   console.log(`verifying ${pkg.name}@${pkg.version} as a consumer would install it`);
@@ -61,7 +77,13 @@ try {
   );
   run('npm', ['install', tarball, '--no-audit', '--no-fund', '--silent'], consumer);
 
-  const installed = join(consumer, 'node_modules', pkg.name.replace('/', '/'));
+  const installed = join(consumer, 'node_modules', pkg.name);
+  if (!existsSync(installed)) {
+    throw new Error(
+      `nested install reported success but produced no ${pkg.name} in node_modules — ` +
+        'the install was a no-op, so nothing below would actually be verified',
+    );
+  }
 
   // 3. The two ways every documented snippet reaches the SDK.
   check('ESM: import { WalletGate } from the package name', () => {
