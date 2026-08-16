@@ -1,9 +1,9 @@
 {
   "name": "@walletgate/eudi",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "description": "EUDI Wallet SDK for JavaScript/TypeScript - EU Digital Identity verification made simple",
-  "main": "dist/node/index.js",
+  "main": "dist/node/index.cjs",
   "module": "dist/browser/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -15,12 +15,14 @@
     "LICENSE"
   ],
   "scripts": {
-    "prepublishOnly": "npm run build && npm run typecheck && npm run lint",
-    "build": "npm run clean && npm run build:node && npm run build:cli && npm run build:browser && npm run build:types",
-    "build:node": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/node/index.js",
-    "build:cli": "esbuild src/cli.ts --bundle --platform=node --target=node18 --outfile=dist/node/cli.js --banner:js=\"#!/usr/bin/env node\"",
-    "build:browser": "esbuild src/index.ts --bundle --platform=browser --target=es2020 --outfile=dist/browser/index.js",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run lint && npm run verify:package",
+    "build": "npm run clean && npm run build:node && npm run build:node:cjs && npm run build:cli && npm run build:browser && npm run build:types",
+    "build:node": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/node/index.js",
+    "build:node:cjs": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/node/index.cjs",
+    "build:cli": "esbuild src/cli.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/node/cli.js --banner:js=\"#!/usr/bin/env node\"",
+    "build:browser": "esbuild src/index.ts --bundle --platform=browser --target=es2020 --format=esm --outfile=dist/browser/index.js",
     "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap",
+    "verify:package": "node scripts/verify-package.mjs",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:coverage": "vitest --coverage",
@@ -36,10 +38,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/node/index.js",
       "browser": "./dist/browser/index.js",
+      "import": "./dist/node/index.js",
+      "require": "./dist/node/index.cjs",
       "default": "./dist/node/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "dependencies": {
     "zod": "^3.22.4"
