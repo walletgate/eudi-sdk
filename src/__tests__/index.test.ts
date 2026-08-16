@@ -27,6 +27,21 @@ describe('WalletGate SDK', () => {
     expect(init.headers['Authorization']).toContain('wg_test_key');
   });
 
+  it('sets Idempotency-Key header when provided', async () => {
+    const wg = new WalletGate({ apiKey: 'wg_test_key', baseUrl: 'https://api.local' });
+    const mockRes = { ok: true, json: async () => ({ success: true, data: { id: 's1' } }) };
+    const spy = vi.fn().mockResolvedValue(mockRes);
+    globalThis.fetch = spy as any;
+
+    await wg.startVerification(
+      { checks: [{ type: 'age_over', value: 18 }] },
+      { idempotencyKey: 'order_123' }
+    );
+
+    const init = spy.mock.calls[0][1];
+    expect(init.headers['Idempotency-Key']).toBe('order_123');
+  });
+
   it('respects timeout and aborts', async () => {
     const wg = new WalletGate({ apiKey: 'wg', baseUrl: 'https://api.local', timeout: 10 });
     globalThis.fetch = vi.fn((url: string, init: any) => {

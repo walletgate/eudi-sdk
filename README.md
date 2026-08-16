@@ -105,6 +105,17 @@ const session = await eudi.startVerification({
 window.location.href = session.verificationUrl;
 ```
 
+### Idempotency (Recommended for Retries)
+
+If you might retry session creation (network timeouts, user double-clicks), pass an `idempotencyKey` so WalletGate can safely dedupe requests.
+
+```ts
+const session = await eudi.startVerification(
+  { checks: [{ type: 'age_over', value: 18 }] },
+  { idempotencyKey: `order_${orderId}` }
+);
+```
+
 ### 3. Get Results
 
 ```ts
@@ -188,7 +199,8 @@ print(response.json())
 ## API Reference (Short)
 
 - `new WalletGate(config)`
-- `startVerification(input)`
+- `startVerification(input, opts?)`
+- `opts.idempotencyKey?: string`
 - `getResult(sessionId)`
 - `verifyWebhook(rawBody, signature, secret, timestamp)`
 - `makeQrDataUrl(url)`
